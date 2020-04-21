@@ -27,7 +27,7 @@ public class ElectricFieldSimulator extends Canvas implements Runnable {
 
 	private static final long serialVersionUID = 8105594952433832877L;
 
-	public final static int WIDTH = 850;
+	public final static int WIDTH = 950;
 	public final static int HEIGHT = WIDTH; // 1:1 aspect ratio
 
 	public boolean running = false; // true if the game is running
