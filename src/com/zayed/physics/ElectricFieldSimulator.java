@@ -4,6 +4,8 @@ import java.awt.Canvas;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
@@ -42,7 +44,10 @@ public class ElectricFieldSimulator extends Canvas implements Runnable {
 	 */
 	public ElectricFieldSimulator() {
 
-		canvasSetup();
+		setPreferredSize(new Dimension(WIDTH, HEIGHT));
+		setMaximumSize(new Dimension(WIDTH, HEIGHT));
+		setMinimumSize(new Dimension(WIDTH, HEIGHT));
+
 		initialize();
 
 		/*
@@ -57,7 +62,6 @@ public class ElectricFieldSimulator extends Canvas implements Runnable {
 				if (code == KeyEvent.VK_R) // 'R' for Restart
 					initialize();
 			}
-
 		});
 
 		/*
@@ -73,11 +77,9 @@ public class ElectricFieldSimulator extends Canvas implements Runnable {
 				if (pressedIndex >= 0) {
 					// move the charge according to the mouse
 					charges[pressedIndex].setPosition(x, y);
-					field.setField(charges);
+					field.compute(charges);
 				}
-
 			}
-
 		});
 
 		/*
@@ -104,14 +106,12 @@ public class ElectricFieldSimulator extends Canvas implements Runnable {
 
 					i++;
 				}
-
 			}
 
 			@Override
 			public void mouseReleased(MouseEvent e) {
 				pressedIndex = -1; // unclick the charge
 			}
-
 		});
 
 		this.addMouseWheelListener(new MouseWheelListener() {
@@ -119,13 +119,11 @@ public class ElectricFieldSimulator extends Canvas implements Runnable {
 			@Override
 			public void mouseWheelMoved(MouseWheelEvent e) {
 				field = new VectorField(WIDTH, HEIGHT, field.getGridSize() + e.getWheelRotation());
-				field.setField(charges);
+				field.compute(charges);
 			}
-
 		});
 
 		this.setFocusable(true);
-
 	}
 
 	/**
@@ -135,66 +133,36 @@ public class ElectricFieldSimulator extends Canvas implements Runnable {
 		int n = 5;
 		charges = new Charge[n];
 
-		for (int i = 0; i < n; i++) {
+		for (int i = 0; i < n; i++)
 			charges[i] = new Charge(WIDTH, HEIGHT);
-		}
 
-//		charges[0] = new Charge(WIDTH, HEIGHT, 400, 400);
-//		charges[1] = new Charge(WIDTH, HEIGHT, 400, 500);
-		
 		if (field == null)
-			field = new VectorField(WIDTH, HEIGHT);
+			field = new VectorField(WIDTH, HEIGHT, 25);
 		else
 			field = new VectorField(WIDTH, HEIGHT, field.getGridSize());
-		
-		field.setField(charges);
+
+		field.compute(charges);
 	}
 
-	/**
-	 * just to setup the canvas to our desired settings and sizes
-	 */
-	private void canvasSetup() {
-		this.setPreferredSize(new Dimension(WIDTH, HEIGHT));
-		this.setMaximumSize(new Dimension(WIDTH, HEIGHT));
-		this.setMinimumSize(new Dimension(WIDTH, HEIGHT));
-	}
-
-	/**
-	 * Game loop only for drawing
-	 */
 	@Override
 	public void run() {
-		// so you can keep your sanity, I won't explain the game loop...
-		// you're welcome... I have a video on it
+		// A simple game loop because a more complicated one is not necessary. I do have
+		// a video on the ultimate game loop though. Check that out on my YouTube
+		// channel. Link on my website.
 
 		this.requestFocus();
 
 		// game timer
-
-		final double MAX_FRAMES_PER_SECOND = 60.0;
-
-		long startTime = System.nanoTime();
-		final double fOptimalTime = 1000000000 / MAX_FRAMES_PER_SECOND;
-		double fDeltaTime = 0;
 		int frames = 0;
 		long timer = System.currentTimeMillis();
 
 		while (running) {
 
-			long currentTime = System.nanoTime();
-			fDeltaTime += (currentTime - startTime) / fOptimalTime;
-			startTime = currentTime;
-
-			while (fDeltaTime >= 1) {
-				render();
-				frames++;
-				fDeltaTime--;
-			}
+			render();
+			frames++;
 
 			if (System.currentTimeMillis() - timer >= 1000) {
-
 				System.out.println("FPS: " + frames);
-
 				frames = 0;
 				timer += 1000;
 			}
@@ -264,12 +232,16 @@ public class ElectricFieldSimulator extends Canvas implements Runnable {
 		// draw background
 		drawBackground(g);
 
+		Graphics2D g2d = (Graphics2D) g;
+
+		g2d.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_SPEED);
+
 		// draw Game Objects here
 		if (field != null)
-			field.draw(g);
+			field.draw(g2d);
 
 		for (Charge charge : charges) {
-			charge.draw(g);
+			charge.draw(g2d);
 		}
 
 		// actually draw
@@ -284,10 +256,8 @@ public class ElectricFieldSimulator extends Canvas implements Runnable {
 	 * @param g Graphics used to draw on the Canvas
 	 */
 	private void drawBackground(Graphics g) {
-		// black background
 		g.setColor(Color.black);
 		g.fillRect(0, 0, WIDTH, HEIGHT);
-
 	}
 
 	/**
@@ -295,16 +265,15 @@ public class ElectricFieldSimulator extends Canvas implements Runnable {
 	 */
 	public static void main(String[] args) {
 		JFrame frame = new JFrame("Electric Field Simulator2");
-		ElectricFieldSimulator game = new ElectricFieldSimulator();
+		ElectricFieldSimulator simulator = new ElectricFieldSimulator();
 
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.setResizable(false);
-		frame.add(game);
+		frame.add(simulator);
 		frame.pack();
 		frame.setLocationRelativeTo(null);
 		frame.setVisible(true);
 
-		game.start();
+		simulator.start();
 	}
-
 }

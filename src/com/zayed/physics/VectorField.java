@@ -1,6 +1,9 @@
 package com.zayed.physics;
 
-import java.awt.Graphics;
+import java.awt.BasicStroke;
+import java.awt.Color;
+import java.awt.Graphics2D;
+import java.awt.Point;
 
 /**
  * The vector field of the charges
@@ -10,7 +13,7 @@ import java.awt.Graphics;
  */
 public class VectorField {
 
-	private FieldVector[][] field; // discrete field
+	private Point.Double[][] field; // discrete field
 	private int cols, rows; // number of vectors columns and vector rows
 	private int gridSize = 25; // distance between 2 adjacent vectors
 
@@ -24,10 +27,9 @@ public class VectorField {
 		cols = w / gridSize + 1;
 		rows = h / gridSize + 1;
 
-		field = new FieldVector[cols][rows];
+		field = new Point.Double[cols][rows];
 
 		createField();
-
 	}
 
 	/**
@@ -47,10 +49,9 @@ public class VectorField {
 		cols = w / gridSize + 1;
 		rows = h / gridSize + 1;
 
-		field = new FieldVector[cols][rows];
+		field = new Point.Double[cols][rows];
 
 		createField();
-
 	}
 
 	/**
@@ -64,11 +65,9 @@ public class VectorField {
 	 * create all the vectors and assign roots
 	 */
 	private void createField() {
-		int length = gridSize / 2;
-
 		for (int i = 0; i < cols; i++) {
 			for (int j = 0; j < rows; j++) {
-				field[i][j] = new FieldVector(i * gridSize, j * gridSize, length);
+				field[i][j] = new Point.Double();
 			}
 		}
 	}
@@ -78,19 +77,19 @@ public class VectorField {
 	 * 
 	 * @param q -> charges to calculate net electric field with
 	 */
-	public void setField(Charge[] charges) {
+	public void compute(Charge[] charges) {
 		final long k = 100000000l;
-		
+
 		for (int i = 0; i < cols; i++) {
 			for (int j = 0; j < rows; j++) {
-				FieldVector vec = field[i][j];
+				Point.Double vec = field[i][j];
 
 				double electricFieldX = 0;
 				double electricFieldY = 0;
 
 				for (Charge charge : charges) {
-					double distX = (vec.getX() - charge.getX());
-					double distY = (vec.getY() - charge.getY());
+					double distX = (i * gridSize - charge.getX());
+					double distY = (j * gridSize - charge.getY());
 					double dist = Math.sqrt(Math.pow(distX, 2) + Math.pow(distY, 2)); // distance equation (hypotenuse)
 
 					double electricFieldMag = 0;
@@ -104,36 +103,45 @@ public class VectorField {
 					}
 				}
 
-				vec.setVector(electricFieldX, electricFieldY);
+				vec.setLocation(electricFieldX, electricFieldY);
 			}
-		}
-
-	}
-
-	/**
-	 * Display field magnitudes in console
-	 */
-	public void displayInConsole() {
-		for (int i = 0; i < cols; i++) {
-			for (int j = 0; j < rows; j++) {
-				FieldVector vec = field[j][i];
-				System.out.print(vec.getMagnitude() + ", ");
-			}
-			System.out.println();
 		}
 	}
 
 	/**
 	 * Draw the vector field
 	 * 
-	 * @param g -> tool to draw
+	 * @param g2d -> tool to draw 2D
 	 */
-	public void draw(Graphics g) {
+	public void draw(Graphics2D g2d) {
 		for (int i = 0; i < cols; i++) {
 			for (int j = 0; j < rows; j++) {
-				field[i][j].draw(g, gridSize);
+				Point.Double vec = field[i][j];
+
+				double magnitude = Math.sqrt(Math.pow(vec.x, 2) + Math.pow(vec.y, 2));
+
+				if (magnitude == 0)
+					return;
+
+				int x = i * gridSize;
+				int y = j * gridSize;
+
+				// coordinates of the tip of the vector
+				int x2 = (int) (x + vec.x / magnitude * gridSize / 2);
+				int y2 = (int) (y + vec.y / magnitude * gridSize / 2);
+
+				int t = gridSize / 10;
+				g2d.setStroke(new BasicStroke(t));
+
+				g2d.setColor(Color.WHITE);
+				g2d.drawLine(x, y, x2, y2);
+
+				if (t >= 1) {
+					int w = t + 1; // width of circle at tip
+					g2d.setColor(Color.GREEN);
+					g2d.fillOval(x2 - w / 2, y2 - w / 2, w, w);
+				}
 			}
 		}
 	}
-
 }
